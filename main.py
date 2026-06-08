@@ -1,3 +1,4 @@
+from app.chain.steps import AskInput, PromptBuilder, LLMRunner, ResponseParser
 from fastapi import FastAPI, UploadFile, File 
 import pandas as pd
 app = FastAPI()
@@ -25,3 +26,21 @@ def get_stats():
     if current_dataset is None:
         return {"error": "No dataset uploaded"}
     return current_dataset.describe().to_dict()
+
+@app.post("/ai/ask")
+def ask_ai(question: dict):
+    if current_dataset is None:
+        return {"error": "No dataset uploaded"}
+    
+    stats = current_dataset.describe().to_dict()
+    
+    chain = PromptBuilder() | LLMRunner() | ResponseParser()
+    
+    result = chain.invoke(
+        AskInput(
+            question=question["question"],
+            stats=stats
+    )
+    
+    )
+    return result
